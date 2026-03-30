@@ -1,4 +1,3 @@
-const { json } = require("body-parser");
 const express = require("express");
 const mongoose = require("mongoose");
 require("dotenv/config");
@@ -34,10 +33,33 @@ app.post("/expenses", async (req, res) => {
 });
 
 app.get("/expenses", async (req, res) => {
-
 	try {
 		const result = await Expense.find();
 		res.json({ result });
+	} catch (err) {
+		return res.json({ err });
+	}
+});
+
+app.get("/expenses/summary", async (req, res) => {
+	try {
+		const byCategory = await Expense.aggregate([
+			{
+				$group: {
+					_id: "$category",
+					total: { $sum: "$amount" },
+				},
+			},
+		]);
+		const grandTotal = await Expense.aggregate([
+			{
+				$group: {
+					_id: null,
+					total: { $sum: "$amount" },
+				},
+			},
+		]);
+		res.json({ byCategory, grandTotal });
 	} catch (err) {
 		return res.json({ err });
 	}
